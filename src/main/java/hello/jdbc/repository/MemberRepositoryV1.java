@@ -1,26 +1,36 @@
 package hello.jdbc.repository;
 
-import hello.jdbc.connection.DBConnectionUtil;
+/**
+ * packageName  : hello.jdbc.repository
+ * fileName     : MemberRepositoryV1
+ * author       : sshan
+ * date         : 2023-02-24
+ * description  :
+ * ========================================================
+ * DATE            AUTHOR              NOTE
+ * --------------------------------------------------------
+ * 2023-02-24          sshan            최초생성
+ */
+
 import hello.jdbc.domain.Member;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.support.JdbcUtils;
 
+import javax.sql.DataSource;
 import java.sql.*;
 import java.util.NoSuchElementException;
 
 /**
- * packageName  : hello.jdbc.repository
- * fileName     : MemberRepositoryV0
- * author       : sshan
- * date         : 2023-02-22
- * description  : JDBC - DriverManager 사용
- * ========================================================
- * DATE            AUTHOR              NOTE
- * --------------------------------------------------------
- * 2023-02-22          sshan            최초생성
+ * JDBC - DataSource 사용, JdbcUtils 사용
  */
 @Slf4j
-public class MemberRepositoryV0 {
+public class MemberRepositoryV1 {
 
+    private final DataSource dataSource;
+
+    public MemberRepositoryV1(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
     public Member save(Member member) throws SQLException {
         String sql = "insert into member(member_id, money) values(?, ?)";
         Connection con = null;
@@ -40,33 +50,6 @@ public class MemberRepositoryV0 {
             //finally에 두는 이유는 예외가 터져도 실행되기 때문에 꼭 여기에 둬야함
             close(con, pstmt, null);//close
         }
-    }
-
-    private void close(Connection con, Statement stmt, ResultSet rs) {
-        if (rs != null) {
-            try {
-                rs.close();
-            } catch (SQLException e) {
-                log.info("error", e);
-            }
-        }
-        if (stmt != null) {
-            try {
-                stmt.close();
-            } catch (SQLException e) {
-                log.info("error", e);
-            }
-        }
-        if (con != null) {
-            try {
-                con.close();
-            } catch (SQLException e) {
-                log.info("error", e);
-            }
-        }
-    }
-    private Connection getConnection() {
-        return DBConnectionUtil.getConnection();
     }
 
     public Member findById(String memberId) throws SQLException {
@@ -131,5 +114,16 @@ public class MemberRepositoryV0 {
         } finally {
             close(con, pstmt, null);
         }
+    }
+
+    private void close(Connection con, Statement stmt, ResultSet rs) {
+        JdbcUtils.closeResultSet(rs);
+        JdbcUtils.closeStatement(stmt);
+        JdbcUtils.closeConnection(con);
+    }
+    private Connection getConnection() throws SQLException {
+        Connection con = dataSource.getConnection();
+        log.info("get connection={}, class={}", con, con.getClass());
+        return con;
     }
 }
